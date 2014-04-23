@@ -2,11 +2,16 @@
 import irc.bot
 import irc.strings
 from irc.client import ip_numstr_to_quad, ip_quad_to_numstr
+import banDonCore
+import order
+import time
+from threading import *
+
 
 class Bot(irc.bot.SingleServerIRCBot):
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
-        self.controler = bandonControl
+        self.controler = bandonControl(self,channel)
         self.channel = channel
 
     def on_nicknameinuse(self, c, e):
@@ -21,18 +26,96 @@ class Bot(irc.bot.SingleServerIRCBot):
         #self.do_command(e, e.arguments[0])
 
     def on_pubmsg(self, c, e):
-        print e.source.nick
+        user = e.source.nick
         print e.arguments[0]
         a = e.arguments[0].split(":", 1)
         if len(a) > 1 and irc.strings.lower(a[0]) == irc.strings.lower(self.connection.get_nickname()):
-            print a
+            rmsg =  irc.strings.lower(a[1]).strip()
+            if len(rmsg.split(' ')) > 1:
+                command = rmsg.split(' ')[0]
+                msg= rmsg.split(' ')[1]
+            else:
+                command = rmsg
+                msg=''
+            self.controler.doCommand(c,user,irc.strings.lower(command).strip(),msg)
         return
 
+    def say(self,c,msg):
+        c.privmsg(self.channel,msg)
+
+    def sayTo(self,c,user,msg):
+        tomsg = user+': '+msg
+        self.say(c,tomsg)
+
+    def notice(self,c,noticeId,msg):
+        c.notice(noticeId,msg)
+
 class bandonControl(object):
-    def __init__(self):
+    def __init__(self,ircbot,name):
+        self.name = name
+        self.core = banDonCore.core(name)
+        self.bot = ircbot
         pass
 
-    def doCommand(self,user,command):
+    def doCommand(self,c,user,command,msg):
+        if command == u'setmenu':
+            bdlist = []
+            try:
+                bdlist = self.getBandonList(msg)
+            except:
+                print('error')
+                pass
+            if len(bdlist)>0:
+                self.core.setMenu(bdlist)
+            else:
+                self.bot.notice(c,user,'no menu')
+        elif command == u'order':
+
+            pass
+        elif command == u'status':
+            msg = self.core.getStatus()
+
+            pass
+        elif command == u'getmenu':
+            if self.core.menu is None:
+                self.bot.say(c,u'No Menu Now')
+            else:
+                msg = u''
+                for bd in self.core.menu.bandonList:
+                    msg+= bd.name+'-'+str(bd.price)+'   '
+                self.bot.say(c,msg)
+
         pass
 
+    def getBandonList(self,menuStr):
+        bdlist = []
+        for oneline in menuStr.split(';'):
+            itemName = oneline.split('-')[0]
+            price = int(oneline.split('-')[1])
+            bd = order.bandon(itemName,price)
+            bdlist.append(bd)
+            print bd
+        return bdlist
 
+
+
+
+
+class Sender(object):
+    def __init__(self, at_time):
+        self.thread = Thread(target=self.process)
+        self.at_time=at_time
+
+    def start(self):
+        self.thread.start()
+
+    def join(self):
+        self.thread.join()
+
+    def test(self):
+        return self.thread.is_alive()
+
+    def process(self):
+        while time.time() < self.at_time:
+            time.sleep(1)
+        print("process %r" % self.url)

@@ -13,11 +13,9 @@ class bandon(object):
         self.price = price
 
 class menu(object):
-    def __init__(self,menustr):
-        self.bandonList = self.setBandonList(menustr)
+    def __init__(self,list):
+        self.bandonList = list
         pass
-    def setBandonList(self,menustr):
-        return []
 
     def getBandon(self,itemName):
         return [x for x in self.bandonList if x.name is itemName]
