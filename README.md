@@ -19,7 +19,7 @@ botId: getmenu
 <LunchBot> 海南機-50   雞腿-60
 ```
 
-####定便當
+####訂便當
 botId: order 便當名
 ```
 <•eternnoir> LunchBot: order 雞腿
