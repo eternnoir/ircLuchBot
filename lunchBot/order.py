@@ -4,7 +4,7 @@ __author__ = 'eternnoir'
 class order(object):
     def __init__(self,user,bandon):
         self.user = user
-        self.pandon = bandon
+        self.bandon = bandon
         pass
 
 class bandon(object):
@@ -18,7 +18,7 @@ class menu(object):
         pass
 
     def getBandon(self,itemName):
-        return [x for x in self.bandonList if x.name is itemName]
+        return [x for x in self.bandonList if x.name == itemName]
 
 class user(object):
     def __init__(self):

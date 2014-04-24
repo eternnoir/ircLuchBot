@@ -31,13 +31,16 @@ class Bot(irc.bot.SingleServerIRCBot):
         a = e.arguments[0].split(":", 1)
         if len(a) > 1 and irc.strings.lower(a[0]) == irc.strings.lower(self.connection.get_nickname()):
             rmsg =  irc.strings.lower(a[1]).strip()
-            if len(rmsg.split(' ')) > 1:
-                command = rmsg.split(' ')[0]
-                msg= rmsg.split(' ')[1]
-            else:
-                command = rmsg
-                msg=''
-            self.controler.doCommand(c,user,irc.strings.lower(command).strip(),msg)
+            try:
+                if len(rmsg.split(' ')) > 1:
+                    command = rmsg.split(' ')[0]
+                    msg= rmsg.split(' ')[1]
+                else:
+                    command = rmsg
+                    msg=''
+                self.controler.doCommand(c,user,irc.strings.lower(command).strip(),msg)
+            except:
+                self.sayTo(c,user,u'Command Error')
         return
 
     def say(self,c,msg):
@@ -67,10 +70,23 @@ class bandonControl(object):
                 pass
             if len(bdlist)>0:
                 self.core.setMenu(bdlist)
+                self.bot.sayTo(c,user,'Done')
             else:
                 self.bot.notice(c,user,'no menu')
         elif command == u'order':
-
+            bd = self.core.menu.getBandon(msg)
+            if len(bd) == 0:
+                self.bot.sayTo(c,user,'No bandon on menu')
+                return
+            else:
+                userOrder = self.core.findUserOrder(user)
+                if len(userOrder)>0:
+                    userOrder[0].bandon=bd[0]
+                    self.bot.sayTo(c,user,'Order Updated')
+                else:
+                    o = order.order(user,bd[0])
+                    self.core.order.append(o)
+                    self.bot.sayTo(c,user,'Order Done')
             pass
         elif command == u'status':
             msg = self.core.getStatus()
@@ -83,6 +99,18 @@ class bandonControl(object):
                 msg = u''
                 for bd in self.core.menu.bandonList:
                     msg+= bd.name+'-'+str(bd.price)+'   '
+                self.bot.say(c,msg)
+        elif command == u'reset':
+            self.core = banDonCore.core(self.name)
+            self.bot.sayTo(c,user,'Done')
+
+        elif command == u'showorders':
+            if len(self.core.order)<1:
+                self.bot.say(c,'No order now')
+            else:
+                msg = u''
+                for o in self.core.order:
+                    msg+= o.user+'->'+o.bandon.name+'   '
                 self.bot.say(c,msg)
 
         pass
