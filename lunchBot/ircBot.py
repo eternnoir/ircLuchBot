@@ -112,6 +112,9 @@ class bandonControl(object):
                 for o in self.core.order:
                     msg+= o.user+'->'+o.bandon.name+'   '
                 self.bot.say(c,msg)
+        elif command == u'help':
+            #TODO it will show help here
+            self.bot.say(c,'show help')
 
         pass
 
