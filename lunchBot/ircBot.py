@@ -61,64 +61,21 @@ class bandonControl(object):
         pass
 
     def doCommand(self,c,user,command,msg):
-        if command == u'setmenu':
-            bdlist = []
-            try:
-                bdlist = self.getBandonList(msg)
-            except:
-                print('error')
-                pass
-            if len(bdlist)>0:
-                self.core.setMenu(bdlist)
-                self.bot.sayTo(c,user,'Done')
-            else:
-                self.bot.notice(c,user,'no menu')
-        elif command == u'order':
-            bd = self.core.menu.getBandon(msg)
-            if len(bd) == 0:
-                self.bot.sayTo(c,user,'No bandon on menu')
-                return
-            else:
-                userOrder = self.core.findUserOrder(user)
-                if len(userOrder)>0:
-                    userOrder[0].bandon=bd[0]
-                    self.bot.sayTo(c,user,'Order Updated')
-                else:
-                    o = order.order(user,bd[0])
-                    self.core.order.append(o)
-                    self.bot.sayTo(c,user,'Order Done')
-            pass
-        elif command == u'status':
-            msg = self.core.getStatus()
-
-            pass
-        elif command == u'getmenu':
-            if self.core.menu is None:
-                self.bot.say(c,u'No Menu Now')
-            else:
-                msg = u''
-                for bd in self.core.menu.bandonList:
-                    msg+= bd.name+'-'+str(bd.price)+'   '
-                self.bot.say(c,msg)
-        elif command == u'reset':
-            self.core = banDonCore.core(self.name)
-            self.bot.sayTo(c,user,'Done')
-
-        elif command == u'showorders':
-            if len(self.core.order)<1:
-                self.bot.say(c,'No order now')
-            else:
-                msg = u''
-                for o in self.core.order:
-                    msg+= o.user+'->'+o.bandon.name+'   '
-                self.bot.say(c,msg)
-        elif command == u'help':
-            #TODO it will show help here
-            self.bot.say(c,'show help')
-
+        """
+        :param c:irc client
+        :param user:notice user name
+        :param msg:message
+        """
+        mname = 'do_' + command
+        if hasattr(self, mname):
+            method = getattr(self, mname)
+            method(c,user,msg)
+        else:
+            self.error(c,user,msg)
         pass
 
     def getBandonList(self,menuStr):
+
         bdlist = []
         for oneline in menuStr.split(';'):
             itemName = oneline.split('-')[0]
@@ -128,25 +85,77 @@ class bandonControl(object):
             print bd
         return bdlist
 
+    def do_setmenu(self,c,user,msg):
+        """
+        Set Menu
+        format bandonname-momey;.....
+        """
+        bdlist = []
+        try:
+            bdlist = self.getBandonList(msg)
+        except:
+            print('error')
+            pass
+        if len(bdlist)>0:
+            self.core.setMenu(bdlist)
+            self.bot.sayTo(c,user,'Done')
+        else:
+            self.bot.notice(c,user,'no menu')
 
+    def do_order(self,c,user,msg):
+        """
+        Set order
+        format
+        """
+        bd = self.core.menu.getBandon(msg)
+        if len(bd) == 0:
+            self.bot.sayTo(c,user,'No bandon on menu')
+            return
+        else:
+            userOrder = self.core.findUserOrder(user)
+            if len(userOrder)>0:
+                userOrder[0].bandon=bd[0]
+                self.bot.sayTo(c,user,'Order Updated')
+            else:
+                o = order.order(user,bd[0])
+                self.core.order.append(o)
+                self.bot.sayTo(c,user,'Order Done')
+        pass
+    def do_getmenu(self,c,user,msg):
+        if self.core.menu is None:
+            self.bot.say(c,u'No Menu Now')
+        else:
+            msg = u''
+            for bd in self.core.menu.bandonList:
+                msg+= bd.name+'-'+str(bd.price)+'   '
+            self.bot.say(c,msg)
 
+    def do_reset(self,c,user,msg):
+        self.core = banDonCore.core(self.name)
+        self.bot.sayTo(c,user,'Done')
 
+    def do_showorders(self,c,user,msg):
 
-class Sender(object):
-    def __init__(self, at_time):
-        self.thread = Thread(target=self.process)
-        self.at_time=at_time
+        if len(self.core.order)<1:
+            self.bot.say(c,'No order now')
+        else:
+            msg = u''
+            for o in self.core.order:
+                msg+= o.user+'->'+o.bandon.name+'   '
+            self.bot.say(c,msg)
 
-    def start(self):
-        self.thread.start()
+    def do_help(self,c,user,msg):
+        for m in self.getHelpMessage():
+            self.bot.say(c,m)
 
-    def join(self):
-        self.thread.join()
+    def error(self,c,user,msg):
+        self.bot.sayTo(c,user,'Command not found')
 
-    def test(self):
-        return self.thread.is_alive()
+    def getHelpMessage(self):
+        ret = []
+        ret.append(" setmenu bandon1-10;bandon2-20;....  ")
+        ret.append(" order   bandon1  ")
+        ret.append(" getmenu <Get all menu>  ")
+        ret.append(" showorders <Get all orders>  ")
+        return ret
 
-    def process(self):
-        while time.time() < self.at_time:
-            time.sleep(1)
-        print("process %r" % self.url)
